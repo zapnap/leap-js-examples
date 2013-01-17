@@ -33,19 +33,16 @@ var LeapEx = {
     LeapEx.ws.onmessage = function(event) {
       var obj = JSON.parse(event.data);
       var str = JSON.stringify(obj, undefined, 2);
-      //console.log(str);
+      // console.log(str);
 
       if (obj.hands.length > 0) {
         var hand = obj.hands[0];
-        if (hand.fingers.length > 0) {
-          var finger = hand.fingers[0];
-          var x = finger.tip.position[0];
-          var y = finger.tip.position[1];
-          var z = finger.tip.position[2];
+        var x = hand.palmPosition[0];
+        var y = hand.palmPosition[1];
+        var z = hand.palmPosition[2];
 
-          if (z < 0) { z = 0; }
-          LeapEx.draw(x, y, z);
-        }
+        if (z < 0) { z = 0; }
+        LeapEx.draw(x, y, z);
       }
     };
 
