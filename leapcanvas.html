@@ -2,29 +2,18 @@
 <html>
 <head>
 <title>Leap Canvas Example</title>
-<style>
-  .container {
-    margin: 0 auto;
-    width: 500px;
-    height: 500px;
-    border: 1px solid #000;
-  }
-</style>
-
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="leapcanvas.js"></script>
 <script>
   $(document).ready(function() {
-    LeapEx.init('#canvas');
+    LeapEx.init('#canvas', '#debug');
   });
 </script>
 </head>
 
 <body>
   <h1>Leap Canvas</h1>
-  <div id="connection">WebSocket not connected</div>
-  <div class="container">
-    <canvas id="canvas" width="500" height="500"></canvas>
-  </div>
+  <div id="debug">WebSocket not connected</div>
+  <canvas id="canvas"></canvas>
 </body>
 </html>
