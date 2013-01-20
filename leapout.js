@@ -1,16 +1,23 @@
 var LeapOut = {
   ws: null,
   ctx: null,
-  offsetX: 250,
-  el: null,
   width: null,
   height: null,
+  el: null,
+  debugEl: null,
+  leapMinX: -200,
+  leapMaxX: 200,
+  leapMinY: 100,
+  leapMaxY: 600,
+  leapMinZ: -180,
+  leapMaxZ: 180,
+  started: false,
   intervalId: null,
 
   paddle: {
     'x': null,
     'y': null,
-    'width': 75,
+    'width': 200,
     'height': 10
   },
 
@@ -22,8 +29,9 @@ var LeapOut = {
     'dy': 3
   },
 
-  init: function(el) {
+  init: function(el, debugEl) {
     this.el = $(el);
+    this.debugEl = $(debugEl);
 
     // Support both the WebSocket and MozWebSocket objects
     if ((typeof(WebSocket) == 'undefined') &&
@@ -31,40 +39,48 @@ var LeapOut = {
       WebSocket = MozWebSocket;
     }
 
-    this.ctx = $(el)[0].getContext("2d");
-    this.width = $(el).width();
-    this.height = $(el).height();
+    var w = this.width = $(window).width();
+    var h = this.height = $(window).height();
+    $(el).attr('width', w).css('width', w).attr('height', h).css('height', h);
+    $(el).css('position', 'absolute').css('left', '0').css('top', '0');
 
+    this.ctx = $(el)[0].getContext("2d");
     this.ws = new WebSocket("ws://localhost:6437/");
 
     this.ws.onopen = function(event) {
-      document.getElementById("connection").innerHTML = "WebSocket connection open!";
+      LeapOut.debug("WebSocket connection open!");
       LeapOut.start();
     };
 
     this.ws.onclose = function(event) {
       LeapOut.ws = null;
-      document.getElementById("connection").innerHTML = "WebSocket connection closed";
+      LeapOut.debug("WebSocket connection closed");
     };
 
     this.ws.onerror = function(event) {
-      console.log("Received error");
+      LeapOut.debug("Received error");
     };
 
     this.ws.onmessage = function(event) {
       var obj = JSON.parse(event.data);
       var str = JSON.stringify(obj, undefined, 2);
-      //console.log(str);
 
-      if (obj.hands.length > 0) {
+      LeapOut.debug(str);
+
+      if (typeof(obj.hands) != 'undefined' && obj.hands.length > 0) {
         var hand = obj.hands[0];
         var x = hand.palmPosition[0];
-        // var y = hand.palmPosition[1];
-        // var z = hand.palmPosition[2];
-        // if (z < 0) { z = 0; }
-        LeapOut.paddle.x = x + LeapOut.offsetX;
+        LeapOut.paddle.x = LeapOut.scale(x, LeapOut.leapMinX, LeapOut.leapMaxX, 0, LeapOut.width - LeapOut.paddle.width);
+        if (LeapOut.paddle.x > LeapOut.width - LeapOut.paddle.width) { LeapOut.paddle.x = LeapOut.width - LeapOut.paddle.width; }
+        if (LeapOut.paddle.x < 0) { LeapOut.paddle.x = 0; }
       }
     };
+
+    $(document.body).click(function() {
+      LeapOut.toggle();
+    });
+
+    LeapOut.started = true;
 
     return this.el;
   },
@@ -125,5 +141,23 @@ var LeapOut = {
     ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI*2, true);
     ctx.closePath();
     ctx.fill();
+  },
+
+  scale: function(value, oldMin, oldMax, newMin, newMax) {
+    return (((newMax - newMin) * (value - oldMin)) / (oldMax - oldMin)) + newMin;
+  },
+
+  toggle: function() {
+    if (LeapOut.started) {
+      LeapOut.started = false;
+    } else {
+      LeapOut.started = true;
+    }
+  },
+
+  debug: function(message) {
+    if (LeapOut.debugEl) {
+      LeapOut.debugEl.text(message);
+    }
   }
 };
