@@ -1,8 +1,6 @@
 var LeapEx = {
   ws: null,
   ctx: null,
-  offsetX: 250,
-  hackY: 500,
   width: null,
   height: null,
   debugEl: null,
