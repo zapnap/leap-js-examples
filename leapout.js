@@ -139,30 +139,36 @@ var LeapOut = {
     this.drawPaddle();
     this.drawBall();
 
-    // have we hit a brick?
+    // hit a brick?
     var rowHeight = this.brickHeight + this.brickPad;
     var colWidth = this.brickWidth + this.brickPad;
     var row = Math.floor(this.ball.y / rowHeight);
     var col = Math.floor(this.ball.x / colWidth);
 
-    // if so, reverse the ball and mark the brick as broken
+    // reverse the ball and mark the brick as broken
     if ((this.ball.y < this.brickRows * rowHeight) && (row >= 0) && (col >= 0) && (this.bricks[row][col] == 1)) {
       this.ball.dy = -this.ball.dy;
       this.bricks[row][col] = 0;
     }
 
+    // check edges, bounce...
     if (this.ball.x + this.ball.dx > this.width || this.ball.x + this.ball.dx < 0) {
       this.ball.dx = -this.ball.dx;
     }
 
     if (this.ball.y + this.ball.dy < 0) {
       this.ball.dy = -this.ball.dy;
+
     } else if (this.ball.y + this.ball.dy > this.height) {
+
+      // paddle hit
       if (this.ball.x > this.paddle.x && this.ball.x < this.paddle.x + this.paddle.width) {
         this.ball.dy = -this.ball.dy;
+
+      // game over
       } else {
         clearInterval(this.intervalId);
-        LeapOut.debug('Game Over!');
+        LeapOut.debug('Game Over! Click to restart.');
         this.started = false;
         this.reset = true;
       }
