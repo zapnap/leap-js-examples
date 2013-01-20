@@ -54,13 +54,19 @@ var LeapEx = {
         LeapEx.debug(str);
 
         if (typeof(obj.hands) != 'undefined' && obj.hands.length > 0) {
-          var hand = obj.hands[0];
-          var x = hand.palmPosition[0];
-          var y = hand.palmPosition[1];
-          var z = hand.palmPosition[2];
+          var targets = [];
 
-          if (z < 0) { z = 0; }
-          LeapEx.draw(x, y, z);
+          for (var i=0; i<obj.hands.length; i++) {
+            var hand = obj.hands[i];
+            var x = hand.palmPosition[0];
+            var y = hand.palmPosition[1];
+            var z = hand.palmPosition[2];
+
+            if (z < 10) { z = 10; }
+            targets.push({ 'x': x, 'y': y, 'z': z });
+          }
+
+          LeapEx.draw(targets);
         }
       }
     };
@@ -73,14 +79,17 @@ var LeapEx = {
     return LeapEx.el;
   },
 
-  draw: function (x, y, z) {
-    LeapEx.ctx.clearRect(0,0,LeapEx.width,LeapEx.height);
+  draw: function(targets) {
+    LeapEx.ctx.clearRect(0, 0, LeapEx.width, LeapEx.height);
     LeapEx.ctx.beginPath();
-    LeapEx.ctx.arc(LeapEx.scale(x, LeapEx.leapMinX, LeapEx.leapMaxX, -100, LeapEx.width),
-                   LeapEx.scale(y, LeapEx.leapMinY, LeapEx.leapMaxY, LeapEx.height, -100),
-                   z, 0, Math.PI*2, true);
-    LeapEx.ctx.closePath();
-    LeapEx.ctx.fill();
+    for (var i=0; i<targets.length; i++) {
+      var target = targets[i];
+      LeapEx.ctx.arc(LeapEx.scale(target.x, LeapEx.leapMinX, LeapEx.leapMaxX, -100, LeapEx.width),
+                     LeapEx.scale(target.y, LeapEx.leapMinY, LeapEx.leapMaxY, LeapEx.height, -100),
+                     target.z, 0, Math.PI*2, true);
+      LeapEx.ctx.closePath();
+      LeapEx.ctx.fill();
+    }
   },
 
   scale: function(value, oldMin, oldMax, newMin, newMax) {
