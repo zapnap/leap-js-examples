@@ -25,11 +25,11 @@ var LeapOut = {
     'x': null,
     'y': null,
     'width': 200,
-    'height': 10
+    'height': 20
   },
 
   ballStart: {
-    'radius': 10,
+    'radius': 15,
     'x': 250,
     'y': 150,
     'dx': 4,
