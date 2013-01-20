@@ -12,22 +12,32 @@ var LeapOut = {
   leapMinZ: -180,
   leapMaxZ: 180,
   started: false,
+  reset: false,
   intervalId: null,
+  brickRows: 5,
+  brickCols: 10,
+  brickHeight: 20,
+  brickWidth: null,
+  brickPad: 1,
+  bricks: new Array(),
 
-  paddle: {
+  paddleStart: {
     'x': null,
     'y': null,
     'width': 200,
     'height': 10
   },
 
-  ball: {
+  ballStart: {
     'radius': 10,
-    'x': 50,
+    'x': 250,
     'y': 150,
-    'dx': 2,
-    'dy': 3
+    'dx': 4,
+    'dy': 6
   },
+
+  paddle: null,
+  ball: null,
 
   init: function(el, debugEl) {
     this.el = $(el);
@@ -62,22 +72,28 @@ var LeapOut = {
     };
 
     this.ws.onmessage = function(event) {
-      var obj = JSON.parse(event.data);
-      var str = JSON.stringify(obj, undefined, 2);
+      if (LeapOut.started) {
+        var obj = JSON.parse(event.data);
+        var str = JSON.stringify(obj, undefined, 2);
 
-      LeapOut.debug(str);
+        LeapOut.debug(str);
 
-      if (typeof(obj.hands) != 'undefined' && obj.hands.length > 0) {
-        var hand = obj.hands[0];
-        var x = hand.palmPosition[0];
-        LeapOut.paddle.x = LeapOut.scale(x, LeapOut.leapMinX, LeapOut.leapMaxX, 0, LeapOut.width - LeapOut.paddle.width);
-        if (LeapOut.paddle.x > LeapOut.width - LeapOut.paddle.width) { LeapOut.paddle.x = LeapOut.width - LeapOut.paddle.width; }
-        if (LeapOut.paddle.x < 0) { LeapOut.paddle.x = 0; }
+        if (typeof(obj.hands) != 'undefined' && obj.hands.length > 0) {
+          var hand = obj.hands[0];
+          var x = hand.palmPosition[0];
+          LeapOut.paddle.x = LeapOut.scale(x, LeapOut.leapMinX, LeapOut.leapMaxX, 0, LeapOut.width - LeapOut.paddle.width);
+          if (LeapOut.paddle.x > LeapOut.width - LeapOut.paddle.width) { LeapOut.paddle.x = LeapOut.width - LeapOut.paddle.width; }
+          if (LeapOut.paddle.x < 0) { LeapOut.paddle.x = 0; }
+        }
       }
     };
 
     $(document.body).click(function() {
-      LeapOut.toggle();
+      if (LeapOut.reset) {
+        LeapOut.start();
+      } else {
+        LeapOut.toggle();
+      }
     });
 
     LeapOut.started = true;
@@ -86,24 +102,54 @@ var LeapOut = {
   },
 
   start: function() {
+    this.paddle = jQuery.extend(true, {}, this.paddleStart);
+    this.ball = jQuery.extend(true, {}, this.ballStart);
+    this.buildBricks();
+
     this.paddle.x = (this.width - this.paddle.width) / 2;
     this.paddle.y = this.height - this.paddle.height;
 
     var self = this;
     this.intervalId = setInterval(function() {
-      self.draw();
+      if (self.started) {
+        self.draw();
+      }
     });
 
+    this.reset = false;
+    this.started = true;
     return this.intervalId;
   },
 
-  initPaddle: function() {
+  buildBricks: function() {
+    this.brickWidth = (this.width / this.brickCols) - 1;
+
+    this.bricks = new Array(this.brickRows);
+    for (i=0; i < this.brickRows; i++) {
+      this.bricks[i] = new Array(this.brickCols);
+      for (j=0; j < this.brickCols; j++) {
+        this.bricks[i][j] = 1;
+      }
+    }
   },
 
   draw: function() {
     this.clear();
+    this.drawBricks();
     this.drawPaddle();
     this.drawBall();
+
+    // have we hit a brick?
+    var rowHeight = this.brickHeight + this.brickPad;
+    var colWidth = this.brickWidth + this.brickPad;
+    var row = Math.floor(this.ball.y / rowHeight);
+    var col = Math.floor(this.ball.x / colWidth);
+
+    // if so, reverse the ball and mark the brick as broken
+    if ((this.ball.y < this.brickRows * rowHeight) && (row >= 0) && (col >= 0) && (this.bricks[row][col] == 1)) {
+      this.ball.dy = -this.ball.dy;
+      this.bricks[row][col] = 0;
+    }
 
     if (this.ball.x + this.ball.dx > this.width || this.ball.x + this.ball.dx < 0) {
       this.ball.dx = -this.ball.dx;
@@ -116,6 +162,9 @@ var LeapOut = {
         this.ball.dy = -this.ball.dy;
       } else {
         clearInterval(this.intervalId);
+        LeapOut.debug('Game Over!');
+        this.started = false;
+        this.reset = true;
       }
     }
 
@@ -125,6 +174,23 @@ var LeapOut = {
 
   clear: function() {
     this.ctx.clearRect(0, 0, this.width, this.height);
+  },
+
+  drawBricks: function() {
+    var ctx = this.ctx;
+    ctx.beginPath();
+
+    for (i=0; i < this.brickRows; i++) {
+      for (j=0; j < this.brickCols; j++) {
+        if (this.bricks[i][j] == 1) {
+          ctx.rect((j * (this.brickWidth + this.brickPad)) + this.brickPad,
+                   (i * (this.brickHeight + this.brickPad)) + this.brickPad,
+                   this.brickWidth, this.brickHeight);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+    }
   },
 
   drawPaddle: function() {
